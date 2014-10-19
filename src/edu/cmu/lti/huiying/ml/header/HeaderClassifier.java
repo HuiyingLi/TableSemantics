@@ -1,7 +1,7 @@
 package edu.cmu.lti.huiying.ml.header;
 
-import edu.cmu.lti.huiying.datastructure.Group;
-import edu.cmu.lti.huiying.datastructure.Table;
+import edu.cmu.lti.huiying.domainclasses.Group;
+import edu.cmu.lti.huiying.domainclasses.Table;
 
 /**
  * The header classifier assign each row a category: header or field. 

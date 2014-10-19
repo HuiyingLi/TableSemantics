@@ -20,6 +20,9 @@
  ******************************************************************************/
 package edu.isi.karma.modeling.semantictypes.sl ;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
 public class Part {
 	
 	public String string ;
@@ -29,7 +32,11 @@ public class Part {
 		this.string = string ;
 		this.type = type ;
 	}
-	
+	public LinkedHashMap<String, Double> toNumericalFeatures(){
+		LinkedHashMap<String,Double> featurelist=new LinkedHashMap<String,Double>();
+		
+		return featurelist;
+	}
 	
 	
 }

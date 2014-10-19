@@ -72,22 +72,22 @@ public class Feature {
 	public static String F_wildcard     = "wildcard";
 	
 	public static String single_token_field = "single_token_field" ;
-	public static String starts_with_token_ = "starts_with_token_" ;
-	public static String ends_with_token_   = "ends_with_token_" ;
+//	public static String starts_with_token_ = "starts_with_token_" ;
+//	public static String ends_with_token_   = "ends_with_token_" ;
 	
 	public static String alpha_length_ = "alpha_length_" ;	
-	public static String starts_with_char_ = "starts_with_char_" ;
+//	public static String starts_with_char_ = "starts_with_char_" ;
 	public static String capitalized_token = "capitalized_token" ;
 	public static String all_capitalized_token = "all_capitalized_token" ;
-	public static String alpha_id_ = "alpha_id_" ;
+//	public static String alpha_id_ = "alpha_id_" ;
 	
-	public static String num_len_ = "num_len_" ;
-	public static String before_decimal_len_ = "before_decimal_len_" ;
-	public static String after_decimal_len_ = "after_decimal_len_" ;
-	public static String neg_num = "neg_num" ;
-	public static String starting_digit_ = "starting_digit_" ;
-	public static String unit_place_digit_ = "unit_place_digit_" ;
-	public static String tenth_place_digit_ = "tenth_place_digit_" ;
+//	public static String num_len_ = "num_len_" ;
+//	public static String before_decimal_len_ = "before_decimal_len_" ;
+//	public static String after_decimal_len_ = "after_decimal_len_" ;
+//	public static String neg_num = "neg_num" ;
+//	public static String starting_digit_ = "starting_digit_" ;
+//	public static String unit_place_digit_ = "unit_place_digit_" ;
+//	public static String tenth_place_digit_ = "tenth_place_digit_" ;
 	
 	
 	public static String symbol_ = "symbol_" ;
