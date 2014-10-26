@@ -70,7 +70,7 @@ public class BagOfPartsFeatureGenerator {
 				if(t.check()){
 					for(Group g:t.groups){
 						for(int i = 0; i < g.columns.size(); i++){
-							Column column=new Column(g.columns.get(i));
+							Column column=g.columns.get(i);
 							column.g=g;
 							if(g.headers!=null && i<g.headers.size())
 								column.header=g.headers.get(i);

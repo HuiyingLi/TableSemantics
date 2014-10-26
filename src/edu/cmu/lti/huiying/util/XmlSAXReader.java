@@ -18,7 +18,7 @@ import edu.cmu.lti.huiying.domainclasses.Group;
 import edu.cmu.lti.huiying.domainclasses.Header;
 import edu.cmu.lti.huiying.domainclasses.Table;
 
-public class XmlReader {
+public class XmlSAXReader {
 
 	private SAXParserFactory factory = null;// = SAXParserFactory.newInstance();
 	private SAXParser saxParser = null;// factory.newSAXParser();
@@ -235,7 +235,6 @@ public class XmlReader {
 		return articles;
 
 	}
-font s
 	/**
 	 * @param args
 	 */
@@ -250,7 +249,7 @@ font s
 		int totalUnequal = 0;
 		int legit = 0;
 		for (File f : files) {
-			XmlReader reader = new XmlReader();
+			XmlSAXReader reader = new XmlSAXReader();
 			Article a = reader.readArticleFromXml(f.getAbsolutePath());
 			for (Table t : a.tables) {
 				totalTable++;
@@ -261,7 +260,6 @@ font s
 			// Article a=reader.article;
 		}
 		System.out.println(totalTable);
-
 		System.out.println(legit);
 
 	}

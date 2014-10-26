@@ -9,6 +9,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import edu.cmu.lti.huiying.domainclasses.*;
+import edu.cmu.lti.huiying.util.TextReader;
+import edu.cmu.lti.huiying.util.XmlSAXReader;
 
 public class ContextBOWFeatureGenerator {
 	public LinkedHashMap<String,Integer> featuremap=null;
@@ -82,7 +84,7 @@ public class ContextBOWFeatureGenerator {
 				if(t.check()){
 					for(Group g:t.groups){
 						for(int i = 0; i < g.columns.size(); i++){
-							Column column=new Column(g.columns.get(i));
+							Column column=g.columns.get(i);
 							column.g=g;
 							if(g.headers!=null && i<g.headers.size())
 								column.header=g.headers.get(i);
@@ -114,8 +116,30 @@ public class ContextBOWFeatureGenerator {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		String[] dirs={"./data/NeuroScience_explode","./data/BrainResearch_explode"};
+		XmlSAXReader reader = new XmlSAXReader();
+		ArrayList<Article> articles=new ArrayList<Article>();
+		for(String dir:dirs)
+		{
+			articles.addAll(reader.loadArticleFromDirectory(dir));
+		}
 		// TODO Auto-generated method stub
-		
+		ArrayList<Column> cols=TextReader.readColumnFromTsv("./10types.all");
+		BagOfPartsFeatureGenerator bfg=new BagOfPartsFeatureGenerator();
+		bfg.columns2Features(cols);
+		for(Hashtable<String,Double> vec:bfg.columnFeatVectors){
+			double[] v=new double[bfg.featuremap.size()];
+			for(String f:vec.keySet()){
+				Integer fid=bfg.featuremap.get(f);
+				if(fid!=null){
+					v[fid]=vec.get(f);
+				}
+			}
+			for(int i = 0; i < v.length-1; i++){
+				System.out.print(v[i]+",");
+			}
+			System.out.print(v[v.length-1]+"\n");
+		}
 	}
 
 }

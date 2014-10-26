@@ -1,8 +1,10 @@
 package edu.cmu.lti.huiying.util;
 
 import java.io.BufferedWriter;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -38,7 +40,7 @@ public class ColumnRetriever {
 							Header hdr=g.headers.get(i);
 							String text=hdr.text.toLowerCase();
 							if(results.containsKey(text)){
-								results.get(text).add(g.columns.get(i));
+								results.get(text).add(g.columns.get(i).content);
 							}
 						}
 					}
@@ -54,7 +56,7 @@ public class ColumnRetriever {
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		String[] dirs={"./data/NeuroScience_explode","./data/BrainResearch_explode"};
-		XmlReader reader = new XmlReader();
+		XmlSAXReader reader = new XmlSAXReader();
 		ArrayList<Article> articles=new ArrayList<Article>();
 		for(String dir:dirs)
 		{
@@ -115,6 +117,14 @@ public class ColumnRetriever {
 				}
 				System.out.println(s);
 			}
+		}
+		
+		try{
+			FileOutputStream fout= new FileOutputStream("");
+			ObjectOutputStream out = new ObjectOutputStream(fout);
+			out.writeObject(cols);
+		}catch(IOException e){
+			
 		}
 	}
 

@@ -1,6 +1,7 @@
 package edu.cmu.lti.huiying.semantictypes;
 
 import java.io.BufferedWriter;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.StringReader;
@@ -30,7 +31,7 @@ import edu.cmu.lti.huiying.domainclasses.Article;
 import edu.cmu.lti.huiying.domainclasses.Field;
 import edu.cmu.lti.huiying.domainclasses.Group;
 import edu.cmu.lti.huiying.domainclasses.Table;
-import edu.cmu.lti.huiying.util.XmlReader;
+import edu.cmu.lti.huiying.util.XmlSAXReader;
 
 import weka.clusterers.HierarchicalClusterer;
 import weka.core.Instances;
@@ -59,7 +60,7 @@ public class ColumnHierarchicalClusterer {
 	}
 	
 	public void loadData(String[] dirs){
-		XmlReader reader = new XmlReader();
+		XmlSAXReader reader = new XmlSAXReader();
 		this.articles=new ArrayList<Article>();
 		for(String dir:dirs)
 		{
@@ -82,7 +83,7 @@ public class ColumnHierarchicalClusterer {
 						Group g = t.groups.get(k);
 						for(int l = 0; l < g.columns.size(); l++){
 							cnt++;
-							ArrayList<Field> col=g.columns.get(l);
+							ArrayList<Field> col=g.columns.get(l).content;
 							Hashtable<String, Double> colvec=new Hashtable<String,Double>();
 							for(Field f:col){
 								if(f.text.length()>0){
@@ -141,7 +142,7 @@ public class ColumnHierarchicalClusterer {
 					for(int k = 0; k < t.groups.size(); k++){
 						Group g = t.groups.get(k);
 						for(int l = 0; l < g.columns.size(); l++){
-							ArrayList<Field> col=g.columns.get(l);
+							ArrayList<Field> col=g.columns.get(l).content;
 							
 							Hashtable<String, Double> colvec=new Hashtable<String,Double>();//feature frequency table
 							for(Field f:col){

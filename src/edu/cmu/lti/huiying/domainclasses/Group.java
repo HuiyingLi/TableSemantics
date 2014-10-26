@@ -7,8 +7,8 @@ public class Group {
 	public Table table;//The table it belongs to
 	public ArrayList<Header> headers;
 	public ArrayList<Header> headerlist;
-	public ArrayList<ArrayList<Field>> columns; 
-	public ArrayList<ArrayList<Field>> rows;
+	public ArrayList<Column> columns; 
+	public ArrayList<ArrayList<Field>> rows; 
 	private int width=-1; //Number of columns in the grid. Since row may not share same size, this is the voted length
 	//of all the rows.
 	private int length=-1;//Number of rows
@@ -16,7 +16,7 @@ public class Group {
 	public Group(){
 		this.headers=null;
 		this.headerlist=null;
-		this.columns=new ArrayList<ArrayList<Field>>();
+		this.columns=new ArrayList<Column>();
 		this.rows=new ArrayList<ArrayList<Field>>();
 	}
 	
@@ -78,7 +78,9 @@ public class Group {
 				else
 					col.add(new Field(""));
 			}
-			this.columns.add(col);
+			Column c = new Column(col);
+			c.g=this;
+			this.columns.add(c);
 		}
 	}
 	/**

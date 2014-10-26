@@ -9,6 +9,8 @@ import edu.isi.karma.modeling.semantictypes.sl.RegexFeatureExtractor;
 public class Field {
 	public String text;
 	public ArrayList<Part> parts;
+	public int byteStart=-1;
+	public int byteEnd=-1;
 	public Field(String s){
 		this.text=s;
 		if(text.length()>0)
