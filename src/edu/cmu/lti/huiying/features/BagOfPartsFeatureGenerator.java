@@ -14,7 +14,7 @@ import edu.cmu.lti.huiying.util.TextReader;
 
 public class BagOfPartsFeatureGenerator {
 	public LinkedHashMap<String,Integer> featuremap=null;
-	public ArrayList<Hashtable<String,Double>> columnFeatVectors=null;
+	public ArrayList<LinkedHashMap<String,Double>> columnFeatVectors=null;
 	//private ArrayList<Integer[]> featureVecIndices;//Stores the position of original column of the feature vector, in terms of
 													//[i,j,k,l] i_th article, j_th table, k_th group, l_th column.
 	//private LinkedHashMap<String, Integer> featureFreq=null;
@@ -22,17 +22,15 @@ public class BagOfPartsFeatureGenerator {
 	
 	public BagOfPartsFeatureGenerator(){
 		this.featuremap=new LinkedHashMap<String,Integer>();
-		this.columnFeatVectors=new ArrayList<Hashtable<String,Double>>();
+		this.columnFeatVectors=new ArrayList<LinkedHashMap<String,Double>>();
 		
 	}
 	public void columns2Features(ArrayList<Column> columns){
 		thresholdFeatureSelection(columns,this.threshold);
 		for(int i = 0; i < this.columnFeatVectors.size();i++){
-			Hashtable<String,Double> colvec=this.columnFeatVectors.get(i);
-			Hashtable<String,Double> filtered=new Hashtable<String,Double>();
-			Enumeration<String> e = colvec.keys();
-			while(e.hasMoreElements()){
-				String feat=e.nextElement();
+			LinkedHashMap<String,Double> colvec=this.columnFeatVectors.get(i);
+			LinkedHashMap<String,Double> filtered=new LinkedHashMap<String,Double>();
+			for(String feat:colvec.keySet()){
 				if(this.featuremap.containsKey(feat)){
 					filtered.put(feat, colvec.get(feat));
 				}
@@ -101,7 +99,7 @@ public class BagOfPartsFeatureGenerator {
 		for(int l = 0; l < columns.size(); l++){
 			cnt++;
 			Column col=columns.get(l);
-			Hashtable<String, Double> colvec=new Hashtable<String,Double>();
+			LinkedHashMap<String, Double> colvec=new LinkedHashMap<String,Double>();
 			for(Field f:col.content){
 				if(f.text.length()>0){
 					//ArrayList<String> featlist=f.toKarmaFeatures();
@@ -138,7 +136,7 @@ public class BagOfPartsFeatureGenerator {
 		ArrayList<Column> cols=TextReader.readColumnFromTsv("./10types.all");
 		BagOfPartsFeatureGenerator bfg=new BagOfPartsFeatureGenerator();
 		bfg.columns2Features(cols);
-		for(Hashtable<String,Double> vec:bfg.columnFeatVectors){
+		for(LinkedHashMap<String,Double> vec:bfg.columnFeatVectors){
 			double[] v=new double[bfg.featuremap.size()];
 			for(String f:vec.keySet()){
 				Integer fid=bfg.featuremap.get(f);

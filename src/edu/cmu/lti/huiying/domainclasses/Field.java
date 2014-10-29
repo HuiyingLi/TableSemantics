@@ -8,17 +8,15 @@ import edu.isi.karma.modeling.semantictypes.sl.RegexFeatureExtractor;
 
 public class Field {
 	public String text;
-	public ArrayList<Part> parts;
+	public ArrayList<Part> parts=null;
 	public int byteStart=-1;
 	public int byteEnd=-1;
 	public Field(String s){
 		this.text=s;
+		
 		if(text.length()>0)
-		this.parts=Lexer.tokenizeField(this.text);
-		else
-			this.parts=new ArrayList<Part>();
+			this.parts=Lexer.tokenizeField(this.text);
 	}
-	
 	
 	public String toString(){
 		return text;
@@ -27,8 +25,11 @@ public class Field {
 	public ArrayList<String> toKarmaFeatures(){
 		ArrayList<String> features=new ArrayList<String>();
 		features.addAll(RegexFeatureExtractor.getFieldFeatures(this.text));
-		for(Part p:parts)
-			features.addAll(RegexFeatureExtractor.getTokenFeatures(p));
+		if(parts==null &text.length()>0){
+			this.parts=Lexer.tokenizeField(text);
+			for(Part p:parts)
+				features.addAll(RegexFeatureExtractor.getTokenFeatures(p));
+		}
 		return features;
 	}
 	

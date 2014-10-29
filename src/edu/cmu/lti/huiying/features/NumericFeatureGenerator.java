@@ -1,19 +1,29 @@
 package edu.cmu.lti.huiying.features;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FileUtils;
+
+import edu.cmu.lti.huiying.domainclasses.Column;
 import edu.cmu.lti.huiying.domainclasses.Field;
 import edu.cmu.lti.huiying.domainclasses.Numerical;
+import edu.cmu.lti.huiying.util.OffsetAnnotationGenerator;
 import edu.isi.karma.modeling.semantictypes.sl.Part;
 /**
  * The feature vector specification:
@@ -108,7 +118,7 @@ public class NumericFeatureGenerator {
 			num.mainValue=value.doubleValue();
 		}catch(NumberFormatException e0){
 			try{
-				Double value=Double.parseDouble(field.text);
+				Double value=Double.parseDouble(field.text.trim());
 				num.mainValue=value;
 				num.type=2;
 				int dot=field.text.indexOf(".");
@@ -302,6 +312,41 @@ public class NumericFeatureGenerator {
 		sigma/=numlist.size();
 		return Math.sqrt(sigma);
 	}
+	public ArrayList<ArrayList<Double>> columns2Features(ArrayList<Column> cols){
+		ArrayList<ArrayList<Double>> vecs = new ArrayList<ArrayList<Double>>();
+		for(Column c:cols){
+			vecs.add(getFeatureVector(c.content));
+		}
+		return vecs;
+	}
+	
+	/**
+	 * The feature vector specification:
+	 * 0: type: 1:integer 2:float 3:2-dim 4:3-dim(like coordinates)
+	 * 1: mainValue
+	 * 2: precision
+	 * 3. accuracy
+	 * 4: p value
+	 * @param field
+	 * @return
+	 */
+	public ArrayList<Double> field2Features(Field field){
+		Numerical num=this.recognize(field);
+		Double[] vec={0.0,0.0,0.0,0.0,0.0};
+		if(num.type!=-1){
+			vec[0]=num.type*1.0;
+			vec[1]=num.mainValue;
+			if(num.type==2){
+				vec[1]=num.precision;
+				vec[1]=num.accuracy*1.0;
+			}
+			if(num.p_value!=null)
+				vec[1]=num.p_value;
+			
+		}
+		
+		return new ArrayList<Double>(Arrays.asList(vec));
+	}
 	public ArrayList<Double> getFeatureVector(ArrayList<Field> column){
 		/**
 		 * The feature vector specification:
@@ -412,6 +457,7 @@ public class NumericFeatureGenerator {
 		return res;
 		
 	}
+	
 	/**
 	 * @param args
 	 */
@@ -429,36 +475,34 @@ public class NumericFeatureGenerator {
 //			System.out.println(matcher.group(i));
 //			}
 //		}
-		NumericFeatureGenerator nfg = new NumericFeatureGenerator();
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(args[0]));
-			int cnt=0;
-			String line = null;
-			while((line=br.readLine())!=null){
-				cnt++;
-				ArrayList<Field> col=new ArrayList<Field>();
-				String[] spl=line.trim().split("\t");
-				for(String s:spl){
-					Field f = new Field(s);
-					col.add(f);
-				}
-				try{
-					ArrayList<Double>vec =nfg.getFeatureVector(col);
-					String s="";
-					for(Double d:vec){
-						s+=d.toString()+" ";
-					}
-					System.out.println(s.trim());
-				}catch(NullPointerException e){
-					System.err.println(line);
-				}
-			}
-			System.err.println(cnt);
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+//		NumericFeatureGenerator nfg = new NumericFeatureGenerator();
+//		try {
+//			BufferedReader br = new BufferedReader(new FileReader("materialtab1.csv"));
+//			int cnt=0;
+//			String line = null;
+//			while((line=br.readLine())!=null){
+//				cnt++;
+//				ArrayList<Field> col=new ArrayList<Field>();
+//				String[] spl=line.trim().split("\t");
+//				for(String s:spl){
+//					Field f = new Field(s);
+//					col.add(f);
+//				}
+//				try{
+//					ArrayList<Double>vec =nfg.getFeatureVector(col);
+//					String s="";
+//					for(Double d:vec){
+//						s+=d.toString()+" ";
+//					}
+//					System.out.println(s.trim());
+//				}catch(NullPointerException e){
+//					System.err.println(line);
+//				}
+//			}
+//			System.err.println(cnt);
+//		
+//		
 		
-		}
 //		Numerical num = nfg.recognize(new Field("-135 (this is a test)"));
 //		System.out.println();
 //		//nfg.recognize(new Field("0.7±0.3%"));
@@ -471,7 +515,116 @@ public class NumericFeatureGenerator {
 ////			System.out.println(matcher.group(i));
 ////			}
 ////		}
- catch (IOException e) {
+		
+//		} catch (FileNotFoundException e) {
+//	//		// TODO Auto-generated catch block
+//	//		e.printStackTrace();
+//	//	
+//	//	}
+//		catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+		try {
+			byte[] tab="\t".getBytes();
+			byte[] ret="\n".getBytes();
+			ByteArrayInputStream bais=new ByteArrayInputStream(FileUtils.readFileToByteArray(new File("./metallicmaterial.csv")));
+			//ByteArrayInputStream arrayInputStream = new ByteArrayInputStream();
+			int n=bais.available();
+			int start=0;
+			int end=0;
+			String text="";
+			ArrayList<ArrayList<Field>> rows=new ArrayList<ArrayList<Field>>();
+			ArrayList<Field> r=new ArrayList<Field>();
+			Field field=new Field("");
+			int bc=0;
+			byte[] buff=new byte[n];
+			for(int i = 0; i < n; i++){
+				int b=bais.read();
+				if(b==tab[0]){
+					end=i;
+					text = new String(buff, 0, end-start, StandardCharsets.UTF_8);
+					field.text=text;
+					field.byteStart=start;
+					field.byteEnd=end;
+					r.add(field);
+					field=new Field("");
+					buff=new byte[n];
+					bc=0;
+					start=i+1;
+				}
+				else if(b==ret[0]){
+					end=i;
+					text = new String(buff,0, end-start, StandardCharsets.UTF_8);
+					field.text=text;
+					field.byteStart=start;
+					field.byteEnd=end;
+					r.add(field);
+					rows.add(r);
+					field=new Field("");
+					r=new ArrayList<Field>();
+					buff=new byte[n];
+					bc=0;
+					start=i+1;
+				}else{
+					buff[bc]=(byte)b;
+					bc++;
+				}
+			}
+			NumericFeatureGenerator nfg=new NumericFeatureGenerator();
+			ArrayList<Column> columns=new ArrayList<Column>();
+			for(int i = 0; i < rows.get(0).size(); i++){
+				columns.add(new Column());
+				
+			}
+			for(int i = 1; i < rows.size(); i++){
+				ArrayList<Field> row = rows.get(i);
+				for(int j=0; j<row.size(); j++){
+					if(columns.get(j).content==null){
+						columns.get(j).content=new ArrayList<Field>();
+					}
+					columns.get(j).content.add(row.get(j));
+				}
+			}
+			ArrayList<ArrayList<Double>> vecs=nfg.columns2Features(columns);
+			for(int i = 0; i <rows.get(0).size();i++){
+				Field f=rows.get(0).get(i);
+				if(f.text.contains("Fty")){
+					for(int j = 0; j < columns.get(i).content.size(); j++){
+						Field ff=columns.get(i).content.get(j);
+						ArrayList<Double>fvec=nfg.field2Features(ff);
+						if(fvec.get(1)>90 && fvec.get(1)<125)
+						{
+							System.out.print((j+2)+" ");
+							for(int k=0;k<rows.get(j+1).size();k++)
+								System.out.print(rows.get(j+1).get(k).text+"\t");
+							System.out.println();
+						}
+					}
+				}
+			}
+			
+			
+//			BufferedWriter bw = new BufferedWriter(new FileWriter("./mm.column.num.offset"));
+//			for(int i = 0; i < vecs.size(); i++){
+//				String output=OffsetAnnotationGenerator.numericalFeatureVec2Annotation(columns.get(i), vecs.get(i));
+//				bw.write(output);
+//			}
+//			for(ArrayList<Field> row:rows){
+//				for(Field f:row){
+//					String l="";
+//					ArrayList<Double> vec= nfg.field2Features(f);
+//					l+="DOC0\t"+"ATTRIBUTE\t0\ttype\t"+vec.get(0)+"\t"+f.byteStart+"\t"+f.byteEnd+"0\tnone\n";
+//					l+="DOC0\tATTRIBUTE\t1\tmainvalue\t"+vec.get(1)+"\t"+f.byteStart+"\t"+f.byteEnd+"0\tnone\n";
+//					l+="DOC0\tATTRIBUTE\t2\tprec\t"+vec.get(2)+"\t"+f.byteStart+"\t"+f.byteEnd+"0\tnone\n";
+//					l+="DOC0\tATTRIBUTE\t3\taccuracy\t"+vec.get(3)+"\t"+f.byteStart+"\t"+f.byteEnd+"0\tnone\n";
+//					l+="DOC0\tATTRIBUTE\t4\tpvalue\t"+vec.get(4)+"\t"+f.byteStart+"\t"+f.byteEnd+"0\tnone\n";
+//					bw.write(l);
+//				}
+//				
+//			}
+			//bw.close();
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

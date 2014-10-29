@@ -11,17 +11,17 @@ import edu.cmu.lti.huiying.util.TextReader;
 public class FormattingFeatureGenerator {
 
 	public LinkedHashMap<String,Integer> featuremap=null;
-	public ArrayList<Hashtable<String,Double>> columnFeatVectors=null;
+	public ArrayList<LinkedHashMap<String,Double>> columnFeatVectors=null;
 	public int thres=3;
 	public FormattingFeatureGenerator(){
 		this.featuremap=new LinkedHashMap<String,Integer>();
-		this.columnFeatVectors=new ArrayList<Hashtable<String,Double>>();
+		this.columnFeatVectors=new ArrayList<LinkedHashMap<String,Double>>();
 	}
 	public void columns2Features(ArrayList<Column> columns){
 		thresholdFeatureSelection(columns, this.thres);
 		for(int i = 0; i < this.columnFeatVectors.size(); i++){
-			Hashtable<String,Double> vec=this.columnFeatVectors.get(i);
-			Hashtable<String,Double> filtered=new Hashtable<String,Double>();
+			LinkedHashMap<String,Double> vec=this.columnFeatVectors.get(i);
+			LinkedHashMap<String,Double> filtered=new LinkedHashMap<String,Double>();
 			for(String k:vec.keySet()){
 				if(this.featuremap.containsKey(k)){
 					filtered.put(k, vec.get(k));
@@ -33,7 +33,7 @@ public class FormattingFeatureGenerator {
 	private void thresholdFeatureSelection(ArrayList<Column> columns,int thres){
 		Hashtable<String, Integer> ffreq=new Hashtable<String,Integer>();
 		for(Column c:columns){
-			Hashtable<String,Double> colvec=new Hashtable<String,Double>();
+			LinkedHashMap<String,Double> colvec=new LinkedHashMap<String,Double>();
 			for(Field f:c.content){
 				ArrayList<String> karmafeat=f.toKarmaFeatures();
 				for(String fname:karmafeat){
@@ -60,6 +60,7 @@ public class FormattingFeatureGenerator {
 			}
 		}
 	}
+	
 	/**
 	 * @param args
 	 */
@@ -69,7 +70,7 @@ public class FormattingFeatureGenerator {
 		//ArrayList<Column> cols=TextReader.readColumnFromTsv(args[0]);
 		FormattingFeatureGenerator ffg=new FormattingFeatureGenerator();
 		ffg.columns2Features(cols);
-		for(Hashtable<String,Double> vec:ffg.columnFeatVectors){
+		for(LinkedHashMap<String,Double> vec:ffg.columnFeatVectors){
 			double[] v=new double[ffg.featuremap.size()];
 			for(String f:vec.keySet()){
 				v[ffg.featuremap.get(f)]=vec.get(f);
