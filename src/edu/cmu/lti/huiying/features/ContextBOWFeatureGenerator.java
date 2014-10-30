@@ -127,7 +127,7 @@ public class ContextBOWFeatureGenerator {
 		ArrayList<Column> cols=TextReader.readColumnFromTsv("./10types.all");
 		BagOfPartsFeatureGenerator bfg=new BagOfPartsFeatureGenerator();
 		bfg.columns2Features(cols);
-		for(Hashtable<String,Double> vec:bfg.columnFeatVectors){
+		for(LinkedHashMap<String,Double> vec:bfg.columnFeatVectors){
 			double[] v=new double[bfg.featuremap.size()];
 			for(String f:vec.keySet()){
 				Integer fid=bfg.featuremap.get(f);

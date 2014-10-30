@@ -25,6 +25,27 @@ public class BagOfPartsFeatureGenerator {
 		this.columnFeatVectors=new ArrayList<LinkedHashMap<String,Double>>();
 		
 	}
+	
+	public Hashtable<String, String> singleColumn2Features(ArrayList<Field> col){
+		Hashtable<String,Double> res=new Hashtable<String,Double>();
+		for(Field f:col){
+			if(f.text.length()>0){
+				//ArrayList<String> featlist=f.toKarmaFeatures();
+				ArrayList<String> featlist=f.toLexicalPartFeatures();
+				for(String fname:featlist){
+					if(!res.containsKey(fname)){
+						res.put(fname, 0.0);
+					}
+					res.put(fname, res.get(fname)+1);
+				}
+			}
+		}
+		Hashtable<String,String> ress=new Hashtable<String,String>();
+		for(String k:res.keySet()){
+			ress.put(k, Double.toString(res.get(k)));
+		}
+		return ress;
+	}
 	public void columns2Features(ArrayList<Column> columns){
 		thresholdFeatureSelection(columns,this.threshold);
 		for(int i = 0; i < this.columnFeatVectors.size();i++){

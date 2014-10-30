@@ -30,6 +30,24 @@ public class FormattingFeatureGenerator {
 			this.columnFeatVectors.set(i, filtered);
 		}
 	}
+	public Hashtable<String,String> singleColumn2Features(ArrayList<Field> col){
+		Hashtable<String,Double> res=new Hashtable<String,Double>();
+		for(Field f:col){
+			ArrayList<String> karmafeat=f.toKarmaFeatures();
+			for(String feat:karmafeat){
+				if(!res.containsKey(feat)){
+					res.put(feat, 1.0);
+				}else{
+					res.put(feat, res.get(feat)+1);
+				}
+			}
+		}
+		Hashtable<String,String>ress=new Hashtable<String,String>();
+		for(String k:res.keySet()){
+			ress.put(k, Double.toString(res.get(k)));
+		}
+		return ress;
+	}
 	private void thresholdFeatureSelection(ArrayList<Column> columns,int thres){
 		Hashtable<String, Integer> ffreq=new Hashtable<String,Integer>();
 		for(Column c:columns){

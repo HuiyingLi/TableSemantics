@@ -224,15 +224,15 @@ public class NumericFeatureGenerator {
 					while(matcher.find()){
 						String g1=matcher.group(1);
 						try{
-							num.type=2;
+							int val=Integer.parseInt(g1);
+							num.type=1;
+							num.mainValue=val*1.0;
+						}catch(NumberFormatException ei){
 							num.mainValue=Double.parseDouble(g1);
+							num.type=2;
 							int dot=g1.indexOf(".");
 							if(dot>0){
 								num.accuracy=g1.length()-dot-1;
-							}
-						}catch(NumberFormatException ee){
-							System.err.println(g1);
-							num.mainValue=null;
 						}
 						break;
 					}
@@ -250,7 +250,6 @@ public class NumericFeatureGenerator {
 						}
 						break;
 					}
-					
 				}
 				//fetch for p-value whatsoever:
 				matcher=pattern5.matcher(field.text);
@@ -267,6 +266,7 @@ public class NumericFeatureGenerator {
 					break;
 				}
 				
+				}
 			}
 		}
 		return num;
@@ -312,6 +312,7 @@ public class NumericFeatureGenerator {
 		sigma/=numlist.size();
 		return Math.sqrt(sigma);
 	}
+	
 	public ArrayList<ArrayList<Double>> columns2Features(ArrayList<Column> cols){
 		ArrayList<ArrayList<Double>> vecs = new ArrayList<ArrayList<Double>>();
 		for(Column c:cols){
@@ -351,8 +352,8 @@ public class NumericFeatureGenerator {
 		/**
 		 * The feature vector specification:
 		 * 
-		 * 0:number of float type in column
-		 * 1:number of integer type in column
+		 * 0:number of integer type in column
+		 * 1:number of float type in column
 		 * 2:number of coordinates in the column
 		 * 3:mean value
 		 * 4:standard deviation 
@@ -409,11 +410,11 @@ public class NumericFeatureGenerator {
 				
 				if(num.precision!=null){
 					avgprec+=num.precision;
-					pcount++;
+					preccount++;
 				}
 				if(num.p_value!=null){
 					avgp+=num.p_value;
-					preccount++;
+					pcount++;
 				}
 				
 			}
