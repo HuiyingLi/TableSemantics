@@ -52,6 +52,7 @@ public class NumericFeatureGenerator {
 	private static Pattern pattern4;
 	private static Pattern pattern5;
 	private static Pattern pattern6;
+	private static Pattern pattern7;
 	
 	
 	public NumericFeatureGenerator(){
@@ -62,6 +63,7 @@ public class NumericFeatureGenerator {
 		pattern4=Pattern.compile(regex4);
 		pattern5=Pattern.compile(regex5);
 		pattern6=Pattern.compile(regex6);
+		pattern7=Pattern.compile(regex7);
 	}
 	
 //	public static LinkedHastMap<String, Double>genSinglePartFeatures(){
@@ -76,7 +78,6 @@ public class NumericFeatureGenerator {
 	private static final String numreg="([\\+-]*[0-9]*\\.*[0-9]+[eE]*-*[0-9]*\\.*[0-9]*)";
 	private static final String regex0="([\\+-][1-9][0-9]*)";//integer
 	private static final String regex1="([\\+-]*[0-9]*\\.[0-9]*)";//float or integer
-	
 	/**
 	 * Example regex5 matches: P=0.0035; p-value recognizer
 	 * group1: p value
@@ -104,6 +105,11 @@ public class NumericFeatureGenerator {
 	 * group 1,2,3 are the three coordinate values.
 	 */
 	private final static String regex6="\\("+numreg+",\\s*"+numreg+",\\s*"+numreg+"\\)";
+	/**
+	 * Recognize the scientific numbers such as:
+	 * 1.67×1017, 1.67×10-5, 3×10−3
+	 */
+	private final static String regex7=numreg+"×10"+numreg;
 	/**
 	 * This function recognizes if a given field contains numerical value.
 	 * If a field contains numerical value, the returning list will be the parts
@@ -158,6 +164,38 @@ public class NumericFeatureGenerator {
 						}
 					}
 					break;//only deal with the first one found now...
+				}
+				if(num.type==-1){
+					matcher=pattern7.matcher(field.text);
+					while(matcher.find()){
+						String g1=matcher.group(1);
+						String g2=matcher.group(2);
+						Double body=null;
+						Double exp=null;
+						if(g1.length()>0){
+							try{
+								body=Double.parseDouble(g1);
+								num.type=2;//has to be float whatsoever
+							}catch(Exception ee){
+								System.err.println(g1);
+							}
+						}else{
+							body=1.0;
+							num.type=2;
+						}
+						if(g2.length()>0){
+							try{
+								exp=Double.parseDouble(g2);
+							}catch(Exception ee){
+								System.err.println(g2);
+							}
+						}
+						num.mainValue=body*Math.pow(10, exp);
+						int dot=g1.indexOf(".");
+						if(dot>0){
+							num.accuracy=g1.length()-dot-1;
+						}
+					}
 				}
 				if(num.type==-1){//if doesn't match the first type..
 					matcher = pattern3.matcher(field.text);
@@ -476,7 +514,7 @@ public class NumericFeatureGenerator {
 //			System.out.println(matcher.group(i));
 //			}
 //		}
-//		NumericFeatureGenerator nfg = new NumericFeatureGenerator();
+		NumericFeatureGenerator nfg = new NumericFeatureGenerator();
 //		try {
 //			BufferedReader br = new BufferedReader(new FileReader("materialtab1.csv"));
 //			int cnt=0;
@@ -504,18 +542,18 @@ public class NumericFeatureGenerator {
 //		
 //		
 		
-//		Numerical num = nfg.recognize(new Field("-135 (this is a test)"));
+		Numerical num = nfg.recognize(new Field("1.1067×10-17"));
 //		System.out.println();
 //		//nfg.recognize(new Field("0.7±0.3%"));
-////		Pattern p = Pattern.compile(regex2);
-////		Matcher matcher = p.matcher("p= 0.7e10±0.3e-5%");
-////		while(matcher.find()){
-////			int len=matcher.groupCount();
-////			for(int i =0; i < len+1; i++){
-////			System.out.println("i-value "+i);
-////			System.out.println(matcher.group(i));
-////			}
-////		}
+//		Pattern p = Pattern.compile(regex7);
+//		Matcher matcher = p.matcher("1.1067×10-17");
+//		while(matcher.find()){
+//			int len=matcher.groupCount();
+//			for(int i =0; i < len+1; i++){
+//			System.out.println("i-value "+i);
+//			System.out.println(matcher.group(i));
+//			}
+//		}
 		
 //		} catch (FileNotFoundException e) {
 //	//		// TODO Auto-generated catch block
@@ -526,85 +564,85 @@ public class NumericFeatureGenerator {
 //			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //		}
-		try {
-			byte[] tab="\t".getBytes();
-			byte[] ret="\n".getBytes();
-			ByteArrayInputStream bais=new ByteArrayInputStream(FileUtils.readFileToByteArray(new File("./metallicmaterial.csv")));
-			//ByteArrayInputStream arrayInputStream = new ByteArrayInputStream();
-			int n=bais.available();
-			int start=0;
-			int end=0;
-			String text="";
-			ArrayList<ArrayList<Field>> rows=new ArrayList<ArrayList<Field>>();
-			ArrayList<Field> r=new ArrayList<Field>();
-			Field field=new Field("");
-			int bc=0;
-			byte[] buff=new byte[n];
-			for(int i = 0; i < n; i++){
-				int b=bais.read();
-				if(b==tab[0]){
-					end=i;
-					text = new String(buff, 0, end-start, StandardCharsets.UTF_8);
-					field.text=text;
-					field.byteStart=start;
-					field.byteEnd=end;
-					r.add(field);
-					field=new Field("");
-					buff=new byte[n];
-					bc=0;
-					start=i+1;
-				}
-				else if(b==ret[0]){
-					end=i;
-					text = new String(buff,0, end-start, StandardCharsets.UTF_8);
-					field.text=text;
-					field.byteStart=start;
-					field.byteEnd=end;
-					r.add(field);
-					rows.add(r);
-					field=new Field("");
-					r=new ArrayList<Field>();
-					buff=new byte[n];
-					bc=0;
-					start=i+1;
-				}else{
-					buff[bc]=(byte)b;
-					bc++;
-				}
-			}
-			NumericFeatureGenerator nfg=new NumericFeatureGenerator();
-			ArrayList<Column> columns=new ArrayList<Column>();
-			for(int i = 0; i < rows.get(0).size(); i++){
-				columns.add(new Column());
-				
-			}
-			for(int i = 1; i < rows.size(); i++){
-				ArrayList<Field> row = rows.get(i);
-				for(int j=0; j<row.size(); j++){
-					if(columns.get(j).content==null){
-						columns.get(j).content=new ArrayList<Field>();
-					}
-					columns.get(j).content.add(row.get(j));
-				}
-			}
-			ArrayList<ArrayList<Double>> vecs=nfg.columns2Features(columns);
-			for(int i = 0; i <rows.get(0).size();i++){
-				Field f=rows.get(0).get(i);
-				if(f.text.contains("Fty")){
-					for(int j = 0; j < columns.get(i).content.size(); j++){
-						Field ff=columns.get(i).content.get(j);
-						ArrayList<Double>fvec=nfg.field2Features(ff);
-						if(fvec.get(1)>90 && fvec.get(1)<125)
-						{
-							System.out.print((j+2)+" ");
-							for(int k=0;k<rows.get(j+1).size();k++)
-								System.out.print(rows.get(j+1).get(k).text+"\t");
-							System.out.println();
-						}
-					}
-				}
-			}
-			
+//		try {
+//			byte[] tab="\t".getBytes();
+//			byte[] ret="\n".getBytes();
+//			ByteArrayInputStream bais=new ByteArrayInputStream(FileUtils.readFileToByteArray(new File("./metallicmaterial.csv")));
+//			//ByteArrayInputStream arrayInputStream = new ByteArrayInputStream();
+//			int n=bais.available();
+//			int start=0;
+//			int end=0;
+//			String text="";
+//			ArrayList<ArrayList<Field>> rows=new ArrayList<ArrayList<Field>>();
+//			ArrayList<Field> r=new ArrayList<Field>();
+//			Field field=new Field("");
+//			int bc=0;
+//			byte[] buff=new byte[n];
+//			for(int i = 0; i < n; i++){
+//				int b=bais.read();
+//				if(b==tab[0]){
+//					end=i;
+//					text = new String(buff, 0, end-start, StandardCharsets.UTF_8);
+//					field.text=text;
+//					field.byteStart=start;
+//					field.byteEnd=end;
+//					r.add(field);
+//					field=new Field("");
+//					buff=new byte[n];
+//					bc=0;
+//					start=i+1;
+//				}
+//				else if(b==ret[0]){
+//					end=i;
+//					text = new String(buff,0, end-start, StandardCharsets.UTF_8);
+//					field.text=text;
+//					field.byteStart=start;
+//					field.byteEnd=end;
+//					r.add(field);
+//					rows.add(r);
+//					field=new Field("");
+//					r=new ArrayList<Field>();
+//					buff=new byte[n];
+//					bc=0;
+//					start=i+1;
+//				}else{
+//					buff[bc]=(byte)b;
+//					bc++;
+//				}
+//			}
+//			NumericFeatureGenerator nfg=new NumericFeatureGenerator();
+//			ArrayList<Column> columns=new ArrayList<Column>();
+//			for(int i = 0; i < rows.get(0).size(); i++){
+//				columns.add(new Column());
+//				
+//			}
+//			for(int i = 1; i < rows.size(); i++){
+//				ArrayList<Field> row = rows.get(i);
+//				for(int j=0; j<row.size(); j++){
+//					if(columns.get(j).content==null){
+//						columns.get(j).content=new ArrayList<Field>();
+//					}
+//					columns.get(j).content.add(row.get(j));
+//				}
+//			}
+//			ArrayList<ArrayList<Double>> vecs=nfg.columns2Features(columns);
+//			for(int i = 0; i <rows.get(0).size();i++){
+//				Field f=rows.get(0).get(i);
+//				if(f.text.contains("Fty")){
+//					for(int j = 0; j < columns.get(i).content.size(); j++){
+//						Field ff=columns.get(i).content.get(j);
+//						ArrayList<Double>fvec=nfg.field2Features(ff);
+//						if(fvec.get(1)>90 && fvec.get(1)<125)
+//						{
+//							System.out.print((j+2)+" ");
+//							for(int k=0;k<rows.get(j+1).size();k++)
+//								System.out.print(rows.get(j+1).get(k).text+"\t");
+//							System.out.println();
+//						}
+//					}
+//				}
+//			}
+//			
 			
 //			BufferedWriter bw = new BufferedWriter(new FileWriter("./mm.column.num.offset"));
 //			for(int i = 0; i < vecs.size(); i++){
@@ -625,10 +663,10 @@ public class NumericFeatureGenerator {
 //				
 //			}
 			//bw.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	}
 
 }
