@@ -1,0 +1,171 @@
+﻿<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <style>
+        .jumbotron .container, .jumbotron .container input {
+            text-align: center;
+            text-transform: uppercase;
+        }
+    </style>
+    <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="css/main.css">
+
+    <script src="js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.1.1.js"></script>
+    <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
+    <script src="js/vendor/bootstrap.min.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+
+	function submit()
+	{
+		var post ="value\t"+ document.getElementById("valuelow").value + "\t" 
+			+document.getElementById("valuehigh").value+"###"+
+			"error\t"+document.getElementById("errlow").value+"\t"
+			+document.getElementById("errhigh").value+"###"+
+			"cellmag\t"+document.getElementById("cellmaglow").value+"\t"
+			+document.getElementById("cellmaghigh").value+"###"+
+			"intratio\t"+document.getElementById("intratiolow").value+"\t"
+			+document.getElementById("intratiohigh").value+"###"+
+			"floatratio\t"+document.getElementById("fratiolow").value+"\t"
+			+document.getElementById("fratiohigh").value+"###"+
+			"mean\t"+document.getElementById("meanlow").value+"\t"
+			+document.getElementById("meanhigh").value+"###"+
+			"std\t"+document.getElementById("stdlow").value+"\t"
+			+document.getElementById("stdhigh").value+"###"+
+			"max\t\t"+document.getElementById("rangehigh").value+"###"+
+			"min\t"+document.getElementById("rangelow").value+"\t###"+
+			"acc\t"+document.getElementById("acclow").value+"\t"
+			+document.getElementById("acchigh").value+"###"+
+			"colmag\t"+document.getElementById("colmaglow").value+"\t"
+			+document.getElementById("colmaghigh").value;
+			;
+	
+		  $.ajax({
+                url: "/TopBottom.html?topText=" + encodeURIComponent(post),
+                type: 'GET',
+                async: false,
+                success: function (data) {
+                    res = data.trim();
+		    var list=res.split("\t");
+		    var page="";
+		    for(var i=0; i<list.length; i++){
+			if(i>1){
+				var t=list[i].split("/")
+				var fname=t.slice(-2, -1)+"/"+t.slice(-1, t.length);
+				var v=list[i].split(" ").slice(0,-1);
+				page+="<p>"+v+" <a href="+"./data/"+fname+">"+fname+"</a></p>";
+			}else{
+				page+="<p>"+list[i]+"</p>";
+			}
+			//page+="<p>"+list[i]+"</p>"
+		    }
+		    document.getElementById("displayed").innerHTML = page;
+                 //if(res.indexOf("TM") > -1){             
+                 //   document.getElementById("displayed").innerHTML = "<p>Your post is about task management, e.g. initiate a task, check in with a team member or require a team member to do a task. This message may increase your team score by 0.31<br><a href=\"http://luoyang.lti.cs.cmu.edu:3001/\">Learn more about task management posts!</a></p>";		
+                 //}else if(res.indexOf("CP") > -1)
+                 //{
+                 //   document.getElementById("displayed").innerHTML = "<p>Your post is to collaborate with your team members, e.g. help a team member, give feedbacks to a team member, or collaboration. This message may increase your team score by 0.68<br><a href=\"http://luoyang.lti.cs.cmu.edu:3001/collab.html\">Learn more about collaboration posts!</a></p>";		
+                 //}
+                 //else if(res.indexOf("TB") > -1)
+                 //{
+                   //document.getElementById("displayed").innerHTML = "<p>Your post is about building your team. This message may increase your team score by 2.09<br><a href=\"http://luoyang.lti.cs.cmu.edu:3001/build.html\">Learn more about team building!</a></p>";		
+                 
+                 //}
+                },
+                error: function (jxhr) {
+                    console.log(jxhr.responseText);
+                }
+            });
+	}
+    </script>
+
+</head>
+<body>
+
+    <!-- Main jumbotron for a primary marketing message or call to action -->
+    <div class="jumbotron">
+    <p><strong><font size="6">Numerical Search Demo</strong></font></p>
+      <form>
+		<br><strong> <font size="3">Numerical features for cells</font></strong></br>
+		<p>
+		<table>
+		<tr>
+		<td>Field Name</td> <td align="center">Lower Bound</td> <td align="center">Upper Bound</td>
+		</tr>
+		<tr>
+		<td>value:</td> 
+		<td><input id="valuelow" type="number"></input></td>
+		<td><input id="valuehigh" type="number"></input></td>
+		</tr>
+		<tr>
+		<td>error:</td>
+		<td><input id="errlow" type="number"></input></td>
+		<td><input id="errhigh" type="number"></input></td>
+		</tr>
+		<tr>
+		<td>magnitude:</td>
+		<td><input id="cellmaglow" type="number"></input></td>
+		<td><input id="cellmaghigh" type="number"></input></td>
+		</tr>
+		</table>
+		
+		<br><strong><font size="3">Numerical features for columns</font></strong></br><p>
+		<table>
+		<tr>
+                <td>Field Name</td> <td align="center">Lower Bound</td> <td align="center">Upper Bound</td>
+                </tr>
+		<tr>
+                <td>Integer Ratio</td>
+                <td><input id="intratiolow" type="number"></input></td>
+                <td><input id="intratiohigh" type="number"></input></td>
+                </tr>
+		<tr>
+                <td>Real Ratio</td>
+                <td><input id="fratiolow" type="number"></input></td>
+                <td><input id="fratiohigh" type="number"></input></td>
+                </tr>
+		<tr>
+		<td>mean:</td>
+		<td><input id="meanlow" type="number"></input></td>
+		<td><input id="meanhigh" type="number"></input></td>
+		</tr>
+		<tr>
+		<td>standard deviation:</td>
+		<td><input id="stdlow" type="number"></input></td>
+		<td><input id="stdhigh" type="number"></input></td>
+		</tr>
+		<tr>
+		<td>range:</td>
+                <td><input id="rangelow" type="number"></input></td>
+                <td><input id="rangehigh" type="number"></input></td>
+		</tr>
+                <tr>
+                <td>accuracy</td>
+                <td><input id="acclow" type="number"></input></td>
+                <td><input id="acchigh" type="number"></input></td>
+                </tr>
+                <tr>
+                <td>magnitude</td>
+                <td><input id="colmaglow" type="number"></input></td>
+                <td><input id="colmaghigh" type="number"></input></td>
+                </tr>
+
+		</table>
+	  </form>
+	  <p></p>
+	  <button onclick="submit()">Submit</button> 
+	   <div id="displayed"> </div>
+    </div>
+
+   
+    <!-- /container -->
+</body>
+</html>
