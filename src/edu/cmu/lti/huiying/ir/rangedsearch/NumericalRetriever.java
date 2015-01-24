@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Date;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -19,78 +20,89 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.util.Version;
 
 public class NumericalRetriever {
 
 	IndexSearcher searcher;
 	IndexReader reader;
-	String queries = null;
-	String queryString = null;
 	int hitsPerPage = 10;
+	int singlemax=500;
 	int repeat = 0;
 	boolean raw = false;
-	String field="mean";
 
-	public void search() throws ParseException, IOException {
+	public NumericalRetriever(){
 		try {
 			reader = DirectoryReader.open(FSDirectory.open(new File("index")));
-
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		this.searcher = new IndexSearcher(reader);
-		Analyzer analyzer = new StandardAnalyzer();
-		BufferedReader in = null;
-		if (queries != null) {
-			in = new BufferedReader(new InputStreamReader(new FileInputStream(
-					queries), StandardCharsets.UTF_8));
-		} else {
-			in = new BufferedReader(new InputStreamReader(System.in,
-					StandardCharsets.UTF_8));
+		
+	}
+	public void search(String q) throws ParseException, IOException {
+		//System.out.println(q);
+		String[] spl=q.split("###");
+//		if(spl.length%3!=0){
+//			System.out.println("WRONG");
+//			System.exit(1);
+//		}
+		ArrayList<Query> qlist=new ArrayList<Query>();
+		for(int i = 0; i < spl.length; i++){
+			String[] ss=spl[i].split("\t");
+			Double low=Double.NEGATIVE_INFINITY;
+			Double up=Double.MAX_VALUE;
+			if(ss.length>=2&&ss[1].length()>0)
+				low=new Double(ss[1]);
+			if(ss.length>=3&&ss[2].length()>0)
+				up=new Double(ss[2]);
+			if(ss.length>1){
+				Query query = NumericRangeQuery.newDoubleRange(ss[0],low, up, true, true);
+				qlist.add(query);
+			}
 		}
-		QueryParser parser = new QueryParser(field, analyzer);
-		while (true) {
-			if (queries == null && queryString == null) { // prompt the user
-				System.out.println("Enter query: ");
-			}
+		
+		//Query query2=NumericRangeQuery.newDoubleRange(spl[3], new Double(spl[4]), new Double(spl[5]), true, true);
+		BooleanQuery combined=new BooleanQuery();
+		for(Query qry:qlist){
+			combined.add(qry, Occur.MUST);
+		}
+		System.out.println("Searching for:" + combined.toString()+"\t");
+		
 
-			String line = queryString != null ? queryString : in.readLine();
-
-			if (line == null || line.length() == -1) {
-				break;
-			}
-
-			line = line.trim();
-			if (line.length() == 0) {
-				break;
-			}
-
-			Query query = NumericRangeQuery.newDoubleRange("mean",new Double(0.03), new Double(0.10), true, true);
-			System.out.println("Searching for: " + query.toString());
-
-			if (repeat > 0) { // repeat & time as benchmark
-				Date start = new Date();
-				for (int i = 0; i < repeat; i++) {
-					searcher.search(query, null, 100);
-				}
-				Date end = new Date();
-				System.out.println("Time: " + (end.getTime() - start.getTime())
-						+ "ms");
-			}
-
-			doPagingSearch(in, searcher, query, hitsPerPage, raw,
-					queries == null && queryString == null);
+//			if (repeat > 0) { // repeat & time as benchmark
+//				Date start = new Date();
+//				for (int i = 0; i < repeat; i++) {
+//					searcher.search(query, null, 100);
+//				}
+//				Date end = new Date();
+//				System.out.println("Time: " + (end.getTime() - start.getTime())
+//						+ "ms");
+//			}
+//
+//			doPagingSearch(in, searcher, query, hitsPerPage, raw,
+//					queries == null && queryString == null);
 			
-			if (queryString != null) {
-				break;
+	//	}
+		TopDocs results=searcher.search(combined, singlemax);
+		ScoreDoc[] hits=results.scoreDocs;
+		System.out.println(results.totalHits + " total matching documents\t");
+		int total = Math.min(singlemax, results.totalHits);
+		for(int i = 0; i<total; i++){
+			Document doc=searcher.doc(hits[i].doc);
+			if(doc.getField("type").stringValue().equals("cell")){
+				System.out.println(doc.getField("text").stringValue()+" "+ doc.get("filename")+"\t");
+			}
+			if(doc.getField("type").stringValue().equals("column")){
+				System.out.println(doc.getField("filename").stringValue()+"\t");
 			}
 		}
 	}
@@ -98,13 +110,13 @@ public class NumericalRetriever {
 	public  void doPagingSearch(BufferedReader in,
 			IndexSearcher searcher, Query query, int hitsPerPage, boolean raw,
 			boolean interactive) throws IOException {
-
 		// Collect enough docs to show 5 pages
-		TopDocs results = searcher.search(query, 5 * hitsPerPage);
+		TopDocs results = searcher.search(query, singlemax);
 		ScoreDoc[] hits = results.scoreDocs;
 
+		
 		int numTotalHits = results.totalHits;
-		System.out.println(numTotalHits + " total matching documents");
+		System.err.println(numTotalHits + " total matching documents");
 
 		int start = 0;
 		int end = Math.min(numTotalHits, hitsPerPage);
@@ -134,7 +146,7 @@ public class NumericalRetriever {
 				}
 
 				Document doc = searcher.doc(hits[i].doc);
-				String mean = doc.getField(field).stringValue();
+				String mean = doc.getField("value").stringValue();
 				if (mean != null) {
 					System.out.println((i + 1) + ". " + mean);
 					String filename = doc.get("filename");
@@ -203,7 +215,19 @@ public class NumericalRetriever {
 	public static void main(String[] args) throws ParseException, IOException {
 		// TODO Auto-generated method stub
 		NumericalRetriever nr=new NumericalRetriever();
-		nr.search();
+		String in="";
+		String input=null;
+		try{
+			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+			in+=br.readLine();
+//			while((input=br.readLine())!=null){
+//				in+=input;
+//			}
+		}catch(IOException e){
+			e.printStackTrace();
+		}
+		//System.out.println(in);
+		nr.search(in);
 	}
 
 }

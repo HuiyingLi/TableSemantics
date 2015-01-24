@@ -36,7 +36,9 @@ import org.apache.lucene.util.Version;
 import edu.cmu.lti.huiying.domainclasses.Article;
 import edu.cmu.lti.huiying.domainclasses.Column;
 import edu.cmu.lti.huiying.domainclasses.Group;
+import edu.cmu.lti.huiying.domainclasses.Numerical;
 import edu.cmu.lti.huiying.domainclasses.Table;
+import edu.cmu.lti.huiying.features.NumericFeatureGenerator;
 import edu.cmu.lti.huiying.util.XmlStAXReader;
 
 import java.io.BufferedReader;
@@ -46,6 +48,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
@@ -55,11 +58,13 @@ import java.util.Date;
  * it with no command-line arguments for usage information.
  */
 public class TableIndexer {
+	public int totalDocAdded = 0;
 
 	private TableIndexer() {
 	}
-	private XmlStAXReader xmlreader=null;
-	
+
+	private XmlStAXReader xmlreader = null;
+
 	/** Index all text files under a directory. */
 	public static void main(String[] args) {
 		String usage = "java org.apache.lucene.demo.IndexFiles"
@@ -67,8 +72,9 @@ public class TableIndexer {
 				+ "This indexes the documents in DOCS_PATH, creating a Lucene index"
 				+ "in INDEX_PATH that can be searched with SearchFiles";
 		String indexPath = "index";
-		String docsPath = "/home/huiying/JavaWorkspace/TableSemantics/";
+		String docsPath = "/home/huiying/JavaWorkspace/TableSemantics/web/numericalDemo/public/data";
 		boolean create = true;
+		int nfile = 0;
 		// for(int i=0;i<args.length;i++) {
 		// if ("-index".equals(args[i])) {
 		// indexPath = args[i+1];
@@ -96,7 +102,7 @@ public class TableIndexer {
 		}
 
 		Date start = new Date();
-		TableIndexer tind=new TableIndexer();
+		TableIndexer tind = new TableIndexer();
 		try {
 			System.out.println("Indexing to directory '" + indexPath + "'...");
 
@@ -116,11 +122,12 @@ public class TableIndexer {
 			}
 
 			IndexWriter writer = new IndexWriter(dir, iwc);
-			tind.indexOffsetAnnotation(writer, docDir);
-
+			// tind.indexOffsetAnnotation(writer, docDir);
+			tind.indexExplodedXml(writer, docDir);
 			writer.close();
 
 			Date end = new Date();
+			System.out.println("total doc added:" + tind.totalDocAdded);
 			System.out.println(end.getTime() - start.getTime()
 					+ " total milliseconds");
 
@@ -129,39 +136,131 @@ public class TableIndexer {
 					+ "\n with message: " + e.getMessage());
 		}
 	}
-	public void indexExplodedXml(IndexWriter writer, File file) throws IOException{
-		if(file.canRead()){
-			if(file.isDirectory()){
-				String[] files=file.list();
-				if(files!=null){
-					for(int i = 0; i < files.length; i++){
+
+	public void indexExplodedXml(IndexWriter writer, File file)
+			throws IOException {
+		if (file.canRead()) {
+			if (file.isDirectory()) {
+				String[] files = file.list();
+				if (files != null) {
+					for (int i = 0; i < files.length; i++) {
 						indexExplodedXml(writer, new File(file, files[i]));
 					}
 				}
 			} else {
-				FileInputStream fis=new FileInputStream(file);
-				try{
-					Document doc = new Document();
-					if(this.xmlreader==null){
-						this.xmlreader=new XmlStAXReader();
-						Article a= xmlreader.readArticleFromXml(file.getAbsolutePath());
-						//Index single cells
-						for(Table t:a.tables){
-							for(Group g:t.groups){
-								for(Column col:g.columns){
-									for(edu.cmu.lti.huiying.domainclasses.Field f:col.content){
-										
+				FileInputStream fis = new FileInputStream(file);
+				try {
+					NumericFeatureGenerator nfg = new NumericFeatureGenerator();
+					if (this.xmlreader == null) {
+						this.xmlreader = new XmlStAXReader();
+					}
+					Article a = xmlreader.readArticleFromXml(file
+							.getAbsolutePath());
+					for (Table t : a.tables) {
+						for (Group g : t.groups) {
+							for (Column col : g.columns) {
+								// index columns
+								Document coldoc=new Document();
+								ArrayList<Double> cfv=nfg.getFeatureVector(col.content);
+								if(cfv.get(0)!=null){
+									DoubleField intratio=new DoubleField("intratio", cfv.get(0), Field.Store.NO);
+									coldoc.add(intratio);
+								}
+								if(cfv.get(1)!=null){
+									DoubleField floatratio=new DoubleField("floatratio", cfv.get(1), Field.Store.NO);
+									coldoc.add(floatratio);
+								}
+								if(cfv.get(3)!=null){
+									DoubleField mean=new DoubleField("mean", cfv.get(3),Field.Store.NO);
+									coldoc.add(mean);
+								}
+								if(cfv.get(4)!=null){
+									DoubleField std=new DoubleField("std",cfv.get(4), Field.Store.NO);
+									coldoc.add(std);
+								}
+								if(cfv.get(6)!=null){
+									DoubleField min = new DoubleField("min", cfv.get(6),Field.Store.NO);
+									coldoc.add(min);
+								}
+								if(cfv.get(7)!=null){
+									DoubleField max = new DoubleField("max", cfv.get(7), Field.Store.NO);
+									coldoc.add(max);
+								}
+								if(cfv.get(8)!=null){
+									DoubleField acc=new DoubleField("acc", cfv.get(8),Field.Store.NO);
+									coldoc.add(acc);
+								}
+								if(cfv.get(11)!=null){
+									DoubleField colmag=new DoubleField("colmag", cfv.get(11),Field.Store.NO);
+									coldoc.add(colmag);
+								}
+								StringField fname=new StringField("filename", file.getAbsolutePath(), Field.Store.YES);
+								coldoc.add(fname);
+								StringField type=new StringField("type", "column", Field.Store.YES);
+								coldoc.add(type);
+								if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
+									writer.addDocument(coldoc);
+									totalDocAdded++;
+								} else {
+									writer.updateDocument(new Term(
+											"path", file.getPath()),
+											coldoc);
+								}
+								for (edu.cmu.lti.huiying.domainclasses.Field f : col.content) {
+									// Index single cell
+									Document celldoc = new Document();
+									ArrayList<Double> fv = nfg
+											.field2Features(f);
+									if (fv.get(0) == 1 || fv.get(0) == 2) {
+										try {
+											DoubleField df = new DoubleField(
+													"value", fv.get(1),
+													Field.Store.YES);
+											celldoc.add(df);
+											StringField textf = new StringField(
+													"text", f.text,
+													Field.Store.YES);
+											celldoc.add(textf);
+											if(fv.get(2)!=null & fv.get(2)!=Double.NaN){
+												DoubleField errf=new DoubleField("error", fv.get(2),Field.Store.NO);
+												celldoc.add(errf);
+											}
+											if(fv.get(5)!=Double.NaN){
+												DoubleField magf=new DoubleField("cellmag", fv.get(5),Field.Store.NO);
+												celldoc.add(magf);
+											}
+											StringField sf = new StringField(
+													"filename",
+													file.getAbsolutePath(),
+													Field.Store.YES);
+											celldoc.add(sf);
+											StringField ctype=new StringField("type", "cell", Field.Store.YES);
+											celldoc.add(ctype);
+										} catch (NullPointerException e) {
+											e.printStackTrace();
+											System.out.println(f.text);
+										}
+										if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
+											writer.addDocument(celldoc);
+											totalDocAdded++;
+										} else {
+											writer.updateDocument(new Term(
+													"path", file.getPath()),
+													celldoc);
+										}
 									}
 								}
 							}
 						}
 					}
-				}finally{
+
+				} finally {
 					fis.close();
 				}
 			}
 		}
 	}
+
 	public void indexOffsetAnnotation(IndexWriter writer, File file)
 			throws IOException {
 		// do not try to index files that cannot be read
@@ -197,16 +296,8 @@ public class TableIndexer {
 							doc.add((new StringField("filename", filename,
 									Field.Store.YES)));
 							if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
-								// New index, so we just add the document (no
-								// old document can be there):
-								// System.out.println("adding " + file);
 								writer.addDocument(doc);
 							} else {
-								// Existing index (an old copy of this document
-								// may have been indexed) so
-								// we use updateDocument instead to replace the
-								// old one matching the exact
-								// path, if present:
 								System.out.println("updating " + file);
 								writer.updateDocument(
 										new Term("path", file.getPath()), doc);
