@@ -34,7 +34,7 @@ public class NumericalRetriever {
 	IndexSearcher searcher;
 	IndexReader reader;
 	int hitsPerPage = 10;
-	int singlemax=500;
+	int singlemax=50;
 	int repeat = 0;
 	boolean raw = false;
 
@@ -48,6 +48,8 @@ public class NumericalRetriever {
 		this.searcher = new IndexSearcher(reader);
 		
 	}
+	
+	
 	public void search(String q) throws ParseException, IOException {
 		//System.out.println(q);
 		String[] spl=q.split("###");
@@ -55,55 +57,64 @@ public class NumericalRetriever {
 //			System.out.println("WRONG");
 //			System.exit(1);
 //		}
-		ArrayList<Query> qlist=new ArrayList<Query>();
+		
+		ArrayList<Query> cellqlist=new ArrayList<Query>();
+		ArrayList<Query> colqlist=new ArrayList<Query>();
 		for(int i = 0; i < spl.length; i++){
 			String[] ss=spl[i].split("\t");
-			Double low=Double.NEGATIVE_INFINITY;
-			Double up=Double.MAX_VALUE;
-			if(ss.length>=2&&ss[1].length()>0)
-				low=new Double(ss[1]);
-			if(ss.length>=3&&ss[2].length()>0)
-				up=new Double(ss[2]);
-			if(ss.length>1){
-				Query query = NumericRangeQuery.newDoubleRange(ss[0],low, up, true, true);
-				qlist.add(query);
+			if(!ss[0].equals("headerkeywords")){
+				Double low=Double.NEGATIVE_INFINITY;
+				Double up=Double.MAX_VALUE;
+				if(ss.length>=2&&ss[1].length()>0)
+					low=new Double(ss[1]);
+				if(ss.length>=3&&ss[2].length()>0)
+					up=new Double(ss[2]);
+				if(ss.length>1){
+					Query query = NumericRangeQuery.newDoubleRange(ss[0],low, up, true, true);
+					if(i<4)
+						cellqlist.add(query);
+					else
+						colqlist.add(query);
+				}
+			}else{
+				if(ss.length>1){
+					String qstr=ss[1];
+					QueryParser parser=new QueryParser("headerkeywords", new StandardAnalyzer());
+					Query textq=parser.parse(qstr);
+					colqlist.add(textq);
+				}
 			}
 		}
 		
 		//Query query2=NumericRangeQuery.newDoubleRange(spl[3], new Double(spl[4]), new Double(spl[5]), true, true);
-		BooleanQuery combined=new BooleanQuery();
-		for(Query qry:qlist){
-			combined.add(qry, Occur.MUST);
+		BooleanQuery combinedcell=new BooleanQuery();
+		for(Query qry:cellqlist){
+			combinedcell.add(qry, Occur.MUST);
 		}
-		System.out.println("Searching for:" + combined.toString()+"\t");
+		BooleanQuery combinedcol=new BooleanQuery();
+		for(Query qry:colqlist){
+			combinedcol.add(qry, Occur.MUST);
+		}
+		System.out.println("Searching for cells:" + combinedcell.toString()+"; Searching for columns:"+combinedcol.toString()+"\t");
+		//System.out.println("Searching for columns:" + combinedcol.toString()+"\t");
+		TopDocs cellresults=searcher.search(combinedcell, singlemax);
+		ScoreDoc[] cellhits=cellresults.scoreDocs;
+		TopDocs colresults=searcher.search(combinedcol, singlemax);
+		ScoreDoc[] colhits=colresults.scoreDocs;
 		
-
-//			if (repeat > 0) { // repeat & time as benchmark
-//				Date start = new Date();
-//				for (int i = 0; i < repeat; i++) {
-//					searcher.search(query, null, 100);
-//				}
-//				Date end = new Date();
-//				System.out.println("Time: " + (end.getTime() - start.getTime())
-//						+ "ms");
-//			}
-//
-//			doPagingSearch(in, searcher, query, hitsPerPage, raw,
-//					queries == null && queryString == null);
-			
-	//	}
-		TopDocs results=searcher.search(combined, singlemax);
-		ScoreDoc[] hits=results.scoreDocs;
-		System.out.println(results.totalHits + " total matching documents\t");
-		int total = Math.min(singlemax, results.totalHits);
+		//System.out.println(results.totalHits + " total matching documents\t");
+		System.out.println("**Cell Search Results (total hit "+cellresults.totalHits+")\t");
+		int total = Math.min(singlemax, cellresults.totalHits);
 		for(int i = 0; i<total; i++){
-			Document doc=searcher.doc(hits[i].doc);
-			if(doc.getField("type").stringValue().equals("cell")){
-				System.out.println(doc.getField("text").stringValue()+" "+ doc.get("filename")+"\t");
-			}
-			if(doc.getField("type").stringValue().equals("column")){
-				System.out.println(doc.getField("filename").stringValue()+"\t");
-			}
+			Document doc=searcher.doc(cellhits[i].doc);
+			System.out.println(doc.getField("text").stringValue()+" "+ doc.get("filename")+"\t");
+		}
+		System.out.println("**Column Search Results (total hit "+colresults.totalHits+")\t");
+		total=Math.min(singlemax, colresults.totalHits);
+		for(int i = 0; i < total; i++){
+			Document doc=searcher.doc(colhits[i].doc);
+			System.out.println(doc.getField("colcontent").stringValue()+"\t"+doc.getField("filename").stringValue()+"\t"+doc.getField("wholegroup").stringValue()+"\t");
+			
 		}
 	}
 

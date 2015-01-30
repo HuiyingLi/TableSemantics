@@ -22,6 +22,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DoubleField;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
@@ -36,6 +37,7 @@ import org.apache.lucene.util.Version;
 import edu.cmu.lti.huiying.domainclasses.Article;
 import edu.cmu.lti.huiying.domainclasses.Column;
 import edu.cmu.lti.huiying.domainclasses.Group;
+import edu.cmu.lti.huiying.domainclasses.Header;
 import edu.cmu.lti.huiying.domainclasses.Numerical;
 import edu.cmu.lti.huiying.domainclasses.Table;
 import edu.cmu.lti.huiying.features.NumericFeatureGenerator;
@@ -108,9 +110,9 @@ public class TableIndexer {
 
 			Directory dir = FSDirectory.open(new File(indexPath));
 			// :Post-Release-Update-Version.LUCENE_XY:
-			Analyzer analyzer = new TableAnalyzer();
+			//Analyzer analyzer = new TableAnalyzer();
 			IndexWriterConfig iwc = new IndexWriterConfig(
-					Version.LUCENE_4_10_0, analyzer);
+					Version.LUCENE_4_10_0, new StandardAnalyzer());
 
 			if (create) {
 				// Create a new index in the directory, removing any
@@ -194,10 +196,36 @@ public class TableIndexer {
 									DoubleField colmag=new DoubleField("colmag", cfv.get(11),Field.Store.NO);
 									coldoc.add(colmag);
 								}
+								
+								StringField wholegroup=new StringField("wholegroup", g.toString(), Field.Store.YES);
+								if(wholegroup.stringValue().getBytes().length>32760)
+								{
+									wholegroup.setStringValue("Table too large...");
+									System.err.println("table too large:"+wholegroup.stringValue().getBytes().length);
+									
+								}
+								String headers="";
+								if(col.headers!=null){
+									for(Header hdr:col.headers){
+										headers+=hdr.text.toLowerCase()+" ";
+									}
+								}
+								TextField header=new TextField("headerkeywords", headers.trim(),Field.Store.NO);
+								coldoc.add(header);
+								coldoc.add(wholegroup);
 								StringField fname=new StringField("filename", file.getAbsolutePath(), Field.Store.YES);
 								coldoc.add(fname);
 								StringField type=new StringField("type", "column", Field.Store.YES);
 								coldoc.add(type);
+								IntField bstart=new IntField("bytestart", col.content.get(0).byteStart, Field.Store.YES);
+								IntField bend=new IntField("byteend", col.content.get(col.content.size()-1).byteEnd, Field.Store.YES);
+								String content="";
+								for(edu.cmu.lti.huiying.domainclasses.Field f:col.content)
+									content+=f.text+"|";
+								StringField colcontent=new StringField("colcontent",content.substring(0, content.length()-1), Field.Store.YES);
+								coldoc.add(colcontent);
+								coldoc.add(bstart);
+								coldoc.add(bend);
 								if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
 									writer.addDocument(coldoc);
 									totalDocAdded++;
@@ -229,13 +257,24 @@ public class TableIndexer {
 												DoubleField magf=new DoubleField("cellmag", fv.get(5),Field.Store.NO);
 												celldoc.add(magf);
 											}
+											if(fv.get(4)!=null){
+												DoubleField pvalue=new DoubleField("cellpvalue",fv.get(4), Field.Store.NO);
+												celldoc.add(pvalue);
+											}
 											StringField sf = new StringField(
 													"filename",
 													file.getAbsolutePath(),
 													Field.Store.YES);
 											celldoc.add(sf);
+											
 											StringField ctype=new StringField("type", "cell", Field.Store.YES);
 											celldoc.add(ctype);
+											//StringField cwholegroup=new StringField("wholegroup", g.toString(), Field.Store.YES);
+											//celldoc.add(cwholegroup);
+											IntField cbstart=new IntField("bytestart", f.byteStart, Field.Store.YES);
+											IntField cbend=new IntField("byteend", f.byteEnd, Field.Store.YES);
+											celldoc.add(cbstart);
+											celldoc.add(cbend);
 										} catch (NullPointerException e) {
 											e.printStackTrace();
 											System.out.println(f.text);
