@@ -5,6 +5,8 @@ import java.util.ArrayList;
  * The structure that correpnds to an article.
  * It contains info about the articles such as title, author, journal name, etc., as well as 
  * the texts (if any) and the tables.
+ * This directory (domainclasses/) mainly contains the structures used
+ * to store paper content.
 **/
 public class Article {
 
