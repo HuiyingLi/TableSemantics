@@ -18,6 +18,12 @@ import org.apache.commons.io.FileUtils;
 
 import edu.cmu.lti.huiying.domainclasses.*;
 
+/**
+ * This class reads in the XML formated paper provided by Tony from Elsevier.
+ * It records the byte start/end of an xml element.
+ * More elements may be used in newer dataset (e.g. the </abstract> element from Arxiv dataset) that this reader
+ * did not take into account. In that case one needs to add code to process these elements.
+**/
 public class XmlStAXReader {
 	private XMLInputFactory factory=XMLInputFactory.newInstance();
 	private Article article=new Article();
