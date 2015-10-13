@@ -1,7 +1,11 @@
 package edu.cmu.lti.huiying.domainclasses;
 
 import java.util.ArrayList;
-
+/**
+ * The structure that correpnds to an article.
+ * It contains info about the articles such as title, author, journal name, etc., as well as 
+ * the texts (if any) and the tables.
+**/
 public class Article {
 
 	public String title;
